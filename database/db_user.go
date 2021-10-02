@@ -64,12 +64,13 @@ func (DB *DB) FindUserByID(ID string) *model.User {
 	return &user
 }
 
-func (DB *DB) MatchWith(userID string, matchesID string) *model.User {
+func (DB *DB) UnMatchWith(userID string, matchesID string) *model.User {
 	collection := DB.users
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	user := model.User{}
-	// if other person passed, then also pass
-	//else
-	// move from daily match to pastMatches
+	collection.FindOneAndUpdate(ctx, bson.M{"userid": userID}, bson.M{"todaysMatch": nil})
+	collection.FindOneAndUpdate(ctx, bson.M{"userid": userID}, bson.M{"$addToSet": bson.M{"lostMatches": matchesID}})
+	user = *DB.FindUserByID(userID)
+	return &user
 }
