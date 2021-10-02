@@ -1,0 +1,70 @@
+# GraphQL schema example
+#
+# https://gqlgen.com/getting-started/
+
+input newProfile {
+  firstName: String 
+  lastName: String
+  age: Int
+  phoneNum: String
+  birthDay: String
+  gender: String
+  bio: String
+  city: String
+  profilePic: String
+}
+
+type profile {
+  firstName: String 
+  lastName: String
+  age: Int
+  phoneNum: String
+  birthDay: String
+  gender: String
+  bio: String
+  city: String
+  profilePic: String
+}
+
+input newPref {
+  ageRange: String
+  gender: String
+  location: String
+  darkMode: Boolean
+}
+
+type pref {
+  ageRange: String
+  gender: String
+  location: String
+  darkMode: Boolean
+}
+
+input newUser {
+  profile: newProfile!
+  todaysMatch: String
+  pastMatches: [String]
+  lostMatches: [String]
+  blockMatches: [String]
+  dailyAnswer: String
+  preference: newPref
+}
+
+type user {
+  userID: String!
+  profile: profile!
+  todaysMatch: String
+  pastMatches: [String]
+  lostMatches: [String]
+  blockMatches: [String]
+  dailyAnswer: String
+  preference: pref
+}
+
+type Query {
+  allUsers: [user]
+}
+
+type Mutation {
+  createNewUser(input: newUser!): user!
+}
