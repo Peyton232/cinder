@@ -74,3 +74,14 @@ func (DB *DB) UnMatchWith(userID string, matchesID string) *model.User {
 	user = *DB.FindUserByID(userID)
 	return &user
 }
+
+func (DB *DB) BlockPerson(userID string, matchesID string) *model.User {
+	collection := DB.users
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	user := model.User{}
+	collection.FindOneAndUpdate(ctx, bson.M{"userid": userID}, bson.M{"todaysMatch": nil})
+	collection.FindOneAndUpdate(ctx, bson.M{"userid": userID}, bson.M{"$addToSet": bson.M{"blockMatches": matchesID}})
+	user = *DB.FindUserByID(userID)
+	return &user
+}

@@ -23,11 +23,11 @@ func (r *mutationResolver) MatchWith(ctx context.Context, userid string, matches
 }
 
 func (r *mutationResolver) UnmatchWith(ctx context.Context, userid string, matchesID string) (*model.User, error) {
-	panic(fmt.Errorf("not implemented"))
+	return db.UnMatchWith(userid, matchesID), nil
 }
 
 func (r *mutationResolver) BlockPerson(ctx context.Context, userID string, blockedID string) (*model.User, error) {
-	panic(fmt.Errorf("not implemented"))
+	return db.BlockPerson(userID, blockedID), nil
 }
 
 func (r *mutationResolver) ChangePreferences(ctx context.Context, userID string, input *model.NewPref) (*model.User, error) {
