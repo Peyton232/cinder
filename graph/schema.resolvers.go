@@ -14,8 +14,8 @@ func (r *mutationResolver) CreateNewUser(ctx context.Context, input model.NewUse
 	return db.CreateUser(&input), nil
 }
 
-func (r *mutationResolver) FindTodaysMatches(ctx context.Context) (*model.User, error) {
-	panic(fmt.Errorf("not implemented"))
+func (r *mutationResolver) FindTodaysMatches(ctx context.Context) (bool, error) {
+	return db.FindTodaysMatches(), nil
 }
 
 func (r *mutationResolver) MatchWith(ctx context.Context, userid string, matchesID string) (*model.User, error) {
@@ -35,7 +35,7 @@ func (r *mutationResolver) ChangePreferences(ctx context.Context, userID string,
 }
 
 func (r *mutationResolver) SendDailyAnswer(ctx context.Context, userID string, answer string) (*model.User, error) {
-	panic(fmt.Errorf("not implemented"))
+	return db.SendDailyAnswer(userID, answer), nil
 }
 
 func (r *queryResolver) AllUsers(ctx context.Context) ([]*model.User, error) {

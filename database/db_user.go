@@ -69,7 +69,7 @@ func (DB *DB) UnMatchWith(userID string, matchesID string) *model.User {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	user := model.User{}
-	collection.FindOneAndUpdate(ctx, bson.M{"userid": userID}, bson.M{"todaysMatch": nil})
+	collection.FindOneAndUpdate(ctx, bson.M{"userid": userID}, bson.M{"$set": bson.M{"todaysMatch": nil}})
 	collection.FindOneAndUpdate(ctx, bson.M{"userid": userID}, bson.M{"$addToSet": bson.M{"lostMatches": matchesID}})
 	user = *DB.FindUserByID(userID)
 	return &user
@@ -80,8 +80,13 @@ func (DB *DB) BlockPerson(userID string, matchesID string) *model.User {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	user := model.User{}
-	collection.FindOneAndUpdate(ctx, bson.M{"userid": userID}, bson.M{"todaysMatch": nil})
+	// user
+	collection.FindOneAndUpdate(ctx, bson.M{"userid": userID}, bson.M{"$set": bson.M{"todaysMatch": nil}})
 	collection.FindOneAndUpdate(ctx, bson.M{"userid": userID}, bson.M{"$addToSet": bson.M{"blockMatches": matchesID}})
+
+	// matches
+	collection.FindOneAndUpdate(ctx, bson.M{"userid": matchesID}, bson.M{"$set": bson.M{"todaysMatch": nil}})
+	collection.FindOneAndUpdate(ctx, bson.M{"userid": matchesID}, bson.M{"$addToSet": bson.M{"lostMatches": userID}})
 	user = *DB.FindUserByID(userID)
 	return &user
 }
@@ -112,4 +117,14 @@ func (DB *DB) ChangePref(userID string, pref model.NewPref) *model.User {
 	defer cancel()
 	DB.users.FindOneAndReplace(ctx, bson.M{"userid": userID}, bson.M{"preferences": user.Preference}).Decode(&user)
 	return user
+}
+
+func (DB *DB) SendDailyAnswer(userID string, answer string) *model.User {
+	collection := DB.users
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	user := model.User{}
+	collection.FindOneAndUpdate(ctx, bson.M{"userid": userID}, bson.M{"$set": bson.M{"dailyAnswer": answer}})
+	user = *DB.FindUserByID(userID)
+	return &user
 }
