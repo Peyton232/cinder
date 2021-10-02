@@ -31,7 +31,7 @@ func (r *mutationResolver) BlockPerson(ctx context.Context, userID string, block
 }
 
 func (r *mutationResolver) ChangePreferences(ctx context.Context, userID string, input *model.NewPref) (*model.User, error) {
-	panic(fmt.Errorf("not implemented"))
+	return db.ChangePref(userID, *input), nil
 }
 
 func (r *mutationResolver) SendDailyAnswer(ctx context.Context, userID string, answer string) (*model.User, error) {

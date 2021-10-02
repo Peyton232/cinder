@@ -85,3 +85,31 @@ func (DB *DB) BlockPerson(userID string, matchesID string) *model.User {
 	user = *DB.FindUserByID(userID)
 	return &user
 }
+
+func (DB *DB) ChangePref(userID string, pref model.NewPref) *model.User {
+	user := DB.FindUserByID(userID)
+	if user == nil {
+		log.Default()
+	}
+
+	if pref.AgeRange != nil {
+		user.Preference.AgeRange = pref.AgeRange
+	}
+	if pref.DarkMode != nil {
+		user.Preference.DarkMode = pref.DarkMode
+	}
+	if pref.FindMatchToday != nil {
+		user.Preference.FindMatchToday = pref.FindMatchToday
+	}
+	if pref.Gender != nil {
+		user.Preference.Gender = pref.Gender
+	}
+	if pref.Location != nil {
+		user.Preference.Location = pref.Location
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	DB.users.FindOneAndReplace(ctx, bson.M{"userid": userID}, bson.M{"preferences": user.Preference}).Decode(&user)
+	return user
+}
