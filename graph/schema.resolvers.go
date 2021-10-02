@@ -43,7 +43,7 @@ func (r *queryResolver) AllUsers(ctx context.Context) ([]*model.User, error) {
 }
 
 func (r *queryResolver) UserByID(ctx context.Context, userID string) (*model.User, error) {
-	panic(fmt.Errorf("not implemented"))
+	return db.FindUserByID(userID), nil
 }
 
 // Mutation returns generated.MutationResolver implementation.

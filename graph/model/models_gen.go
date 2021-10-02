@@ -3,10 +3,11 @@
 package model
 
 type NewPref struct {
-	AgeRange *string `json:"ageRange"`
-	Gender   *string `json:"gender"`
-	Location *string `json:"location"`
-	DarkMode *bool   `json:"darkMode"`
+	AgeRange       *string `json:"ageRange"`
+	Gender         *string `json:"gender"`
+	Location       *string `json:"location"`
+	DarkMode       *bool   `json:"darkMode"`
+	FindMatchToday *bool   `json:"findMatchToday"`
 }
 
 type NewProfile struct {
@@ -33,10 +34,11 @@ type NewUser struct {
 }
 
 type Pref struct {
-	AgeRange *string `json:"ageRange"`
-	Gender   *string `json:"gender"`
-	Location *string `json:"location"`
-	DarkMode *bool   `json:"darkMode"`
+	AgeRange       *string `json:"ageRange"`
+	Gender         *string `json:"gender"`
+	Location       *string `json:"location"`
+	DarkMode       *bool   `json:"darkMode"`
+	FindMatchToday *bool   `json:"findMatchToday"`
 }
 
 type Profile struct {

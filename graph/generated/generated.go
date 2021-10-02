@@ -59,10 +59,11 @@ type ComplexityRoot struct {
 	}
 
 	Pref struct {
-		AgeRange func(childComplexity int) int
-		DarkMode func(childComplexity int) int
-		Gender   func(childComplexity int) int
-		Location func(childComplexity int) int
+		AgeRange       func(childComplexity int) int
+		DarkMode       func(childComplexity int) int
+		FindMatchToday func(childComplexity int) int
+		Gender         func(childComplexity int) int
+		Location       func(childComplexity int) int
 	}
 
 	Profile struct {
@@ -229,6 +230,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Pref.DarkMode(childComplexity), true
+
+	case "pref.findMatchToday":
+		if e.complexity.Pref.FindMatchToday == nil {
+			break
+		}
+
+		return e.complexity.Pref.FindMatchToday(childComplexity), true
 
 	case "pref.gender":
 		if e.complexity.Pref.Gender == nil {
@@ -460,6 +468,7 @@ input newPref {
   gender: String
   location: String
   darkMode: Boolean
+  findMatchToday: Boolean
 }
 
 # How are these inputted how are these read???
@@ -468,6 +477,7 @@ type pref {
   gender: String
   location: String
   darkMode: Boolean
+  findMatchToday: Boolean
 }
 
 input newUser {
@@ -2403,6 +2413,38 @@ func (ec *executionContext) _pref_darkMode(ctx context.Context, field graphql.Co
 	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _pref_findMatchToday(ctx context.Context, field graphql.CollectedField, obj *model.Pref) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "pref",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FindMatchToday, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _profile_firstName(ctx context.Context, field graphql.CollectedField, obj *model.Profile) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -2998,6 +3040,14 @@ func (ec *executionContext) unmarshalInputnewPref(ctx context.Context, obj inter
 			if err != nil {
 				return it, err
 			}
+		case "findMatchToday":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("findMatchToday"))
+			it.FindMatchToday, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -3559,6 +3609,8 @@ func (ec *executionContext) _pref(ctx context.Context, sel ast.SelectionSet, obj
 			out.Values[i] = ec._pref_location(ctx, field, obj)
 		case "darkMode":
 			out.Values[i] = ec._pref_darkMode(ctx, field, obj)
+		case "findMatchToday":
+			out.Values[i] = ec._pref_findMatchToday(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
