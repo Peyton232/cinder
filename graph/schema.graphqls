@@ -33,6 +33,7 @@ input newPref {
   darkMode: Boolean
 }
 
+# How are these inputted how are these read???
 type pref {
   ageRange: String
   gender: String
@@ -43,6 +44,7 @@ type pref {
 input newUser {
   profile: newProfile!
   todaysMatch: String
+  longTermMatches: [String]
   pastMatches: [String]
   lostMatches: [String]
   blockMatches: [String]
@@ -54,7 +56,7 @@ type user {
   userID: String!
   profile: profile!
   todaysMatch: String
-  pastMatches: [String]
+  longTermMatches: [String]
   lostMatches: [String]
   blockMatches: [String]
   dailyAnswer: String
@@ -63,8 +65,24 @@ type user {
 
 type Query {
   allUsers: [user]
+  userByID(userID: String!): user! 
+  # sendSMS(): Verify
 }
 
 type Mutation {
   createNewUser(input: newUser!): user!
+
+  # Go through all users and setup matches
+  findTodaysMatches: user!
+
+  # When user wants to turn user into connection
+  matchWith(userid: String!, matchesID: String!): user!
+  unmatchWith(userid: String!, matchesID: String!): user!
+  blockPerson(userID: String!, blockedID: String!): user!
+  changePreferences(userID: String!, input: newPref): user!
+  sendDailyAnswer(userID: String!, answer: String!): user!
 }
+
+# type subscription {
+#     sendDailyQuestion(): Boolean
+# }

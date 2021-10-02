@@ -22,13 +22,14 @@ type NewProfile struct {
 }
 
 type NewUser struct {
-	Profile      *NewProfile `json:"profile"`
-	TodaysMatch  *string     `json:"todaysMatch"`
-	PastMatches  []*string   `json:"pastMatches"`
-	LostMatches  []*string   `json:"lostMatches"`
-	BlockMatches []*string   `json:"blockMatches"`
-	DailyAnswer  *string     `json:"dailyAnswer"`
-	Preference   *NewPref    `json:"preference"`
+	Profile         *NewProfile `json:"profile"`
+	TodaysMatch     *string     `json:"todaysMatch"`
+	LongTermMatches []*string   `json:"longTermMatches"`
+	PastMatches     []*string   `json:"pastMatches"`
+	LostMatches     []*string   `json:"lostMatches"`
+	BlockMatches    []*string   `json:"blockMatches"`
+	DailyAnswer     *string     `json:"dailyAnswer"`
+	Preference      *NewPref    `json:"preference"`
 }
 
 type Pref struct {
@@ -51,12 +52,12 @@ type Profile struct {
 }
 
 type User struct {
-	UserID       string    `json:"userID"`
-	Profile      *Profile  `json:"profile"`
-	TodaysMatch  *string   `json:"todaysMatch"`
-	PastMatches  []*string `json:"pastMatches"`
-	LostMatches  []*string `json:"lostMatches"`
-	BlockMatches []*string `json:"blockMatches"`
-	DailyAnswer  *string   `json:"dailyAnswer"`
-	Preference   *Pref     `json:"preference"`
+	UserID          string    `json:"userID"`
+	Profile         *Profile  `json:"profile"`
+	TodaysMatch     *string   `json:"todaysMatch"`
+	LongTermMatches []*string `json:"longTermMatches"`
+	LostMatches     []*string `json:"lostMatches"`
+	BlockMatches    []*string `json:"blockMatches"`
+	DailyAnswer     *string   `json:"dailyAnswer"`
+	Preference      *Pref     `json:"preference"`
 }

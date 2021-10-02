@@ -9,6 +9,7 @@ import (
 	"errors"
 	"strconv"
 	"sync"
+	"sync/atomic"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
@@ -43,11 +44,18 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Mutation struct {
-		CreateNewUser func(childComplexity int, input model.NewUser) int
+		BlockPerson       func(childComplexity int, userID string, blockedID string) int
+		ChangePreferences func(childComplexity int, userID string, input *model.NewPref) int
+		CreateNewUser     func(childComplexity int, input model.NewUser) int
+		FindTodaysMatches func(childComplexity int) int
+		MatchWith         func(childComplexity int, userid string, matchesID string) int
+		SendDailyAnswer   func(childComplexity int, userID string, answer string) int
+		UnmatchWith       func(childComplexity int, userid string, matchesID string) int
 	}
 
 	Query struct {
 		AllUsers func(childComplexity int) int
+		UserByID func(childComplexity int, userID string) int
 	}
 
 	Pref struct {
@@ -70,22 +78,29 @@ type ComplexityRoot struct {
 	}
 
 	User struct {
-		BlockMatches func(childComplexity int) int
-		DailyAnswer  func(childComplexity int) int
-		LostMatches  func(childComplexity int) int
-		PastMatches  func(childComplexity int) int
-		Preference   func(childComplexity int) int
-		Profile      func(childComplexity int) int
-		TodaysMatch  func(childComplexity int) int
-		UserID       func(childComplexity int) int
+		BlockMatches    func(childComplexity int) int
+		DailyAnswer     func(childComplexity int) int
+		LongTermMatches func(childComplexity int) int
+		LostMatches     func(childComplexity int) int
+		Preference      func(childComplexity int) int
+		Profile         func(childComplexity int) int
+		TodaysMatch     func(childComplexity int) int
+		UserID          func(childComplexity int) int
 	}
 }
 
 type MutationResolver interface {
 	CreateNewUser(ctx context.Context, input model.NewUser) (*model.User, error)
+	FindTodaysMatches(ctx context.Context) (*model.User, error)
+	MatchWith(ctx context.Context, userid string, matchesID string) (*model.User, error)
+	UnmatchWith(ctx context.Context, userid string, matchesID string) (*model.User, error)
+	BlockPerson(ctx context.Context, userID string, blockedID string) (*model.User, error)
+	ChangePreferences(ctx context.Context, userID string, input *model.NewPref) (*model.User, error)
+	SendDailyAnswer(ctx context.Context, userID string, answer string) (*model.User, error)
 }
 type QueryResolver interface {
 	AllUsers(ctx context.Context) ([]*model.User, error)
+	UserByID(ctx context.Context, userID string) (*model.User, error)
 }
 
 type executableSchema struct {
@@ -103,6 +118,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	_ = ec
 	switch typeName + "." + field {
 
+	case "Mutation.blockPerson":
+		if e.complexity.Mutation.BlockPerson == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_blockPerson_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.BlockPerson(childComplexity, args["userID"].(string), args["blockedID"].(string)), true
+
+	case "Mutation.changePreferences":
+		if e.complexity.Mutation.ChangePreferences == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_changePreferences_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.ChangePreferences(childComplexity, args["userID"].(string), args["input"].(*model.NewPref)), true
+
 	case "Mutation.createNewUser":
 		if e.complexity.Mutation.CreateNewUser == nil {
 			break
@@ -115,12 +154,67 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.CreateNewUser(childComplexity, args["input"].(model.NewUser)), true
 
+	case "Mutation.findTodaysMatches":
+		if e.complexity.Mutation.FindTodaysMatches == nil {
+			break
+		}
+
+		return e.complexity.Mutation.FindTodaysMatches(childComplexity), true
+
+	case "Mutation.matchWith":
+		if e.complexity.Mutation.MatchWith == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_matchWith_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.MatchWith(childComplexity, args["userid"].(string), args["matchesID"].(string)), true
+
+	case "Mutation.sendDailyAnswer":
+		if e.complexity.Mutation.SendDailyAnswer == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_sendDailyAnswer_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.SendDailyAnswer(childComplexity, args["userID"].(string), args["answer"].(string)), true
+
+	case "Mutation.unmatchWith":
+		if e.complexity.Mutation.UnmatchWith == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_unmatchWith_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UnmatchWith(childComplexity, args["userid"].(string), args["matchesID"].(string)), true
+
 	case "Query.allUsers":
 		if e.complexity.Query.AllUsers == nil {
 			break
 		}
 
 		return e.complexity.Query.AllUsers(childComplexity), true
+
+	case "Query.userByID":
+		if e.complexity.Query.UserByID == nil {
+			break
+		}
+
+		args, err := ec.field_Query_userByID_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.UserByID(childComplexity, args["userID"].(string)), true
 
 	case "pref.ageRange":
 		if e.complexity.Pref.AgeRange == nil {
@@ -227,19 +321,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.User.DailyAnswer(childComplexity), true
 
+	case "user.longTermMatches":
+		if e.complexity.User.LongTermMatches == nil {
+			break
+		}
+
+		return e.complexity.User.LongTermMatches(childComplexity), true
+
 	case "user.lostMatches":
 		if e.complexity.User.LostMatches == nil {
 			break
 		}
 
 		return e.complexity.User.LostMatches(childComplexity), true
-
-	case "user.pastMatches":
-		if e.complexity.User.PastMatches == nil {
-			break
-		}
-
-		return e.complexity.User.PastMatches(childComplexity), true
 
 	case "user.preference":
 		if e.complexity.User.Preference == nil {
@@ -368,6 +462,7 @@ input newPref {
   darkMode: Boolean
 }
 
+# How are these inputted how are these read???
 type pref {
   ageRange: String
   gender: String
@@ -378,6 +473,7 @@ type pref {
 input newUser {
   profile: newProfile!
   todaysMatch: String
+  longTermMatches: [String]
   pastMatches: [String]
   lostMatches: [String]
   blockMatches: [String]
@@ -389,7 +485,7 @@ type user {
   userID: String!
   profile: profile!
   todaysMatch: String
-  pastMatches: [String]
+  longTermMatches: [String]
   lostMatches: [String]
   blockMatches: [String]
   dailyAnswer: String
@@ -398,17 +494,81 @@ type user {
 
 type Query {
   allUsers: [user]
+  userByID(userID: String!): user! 
+  # sendSMS(): Verify
 }
 
 type Mutation {
   createNewUser(input: newUser!): user!
-}`, BuiltIn: false},
+
+  # Go through all users and setup matches
+  findTodaysMatches: user!
+
+  # When user wants to turn user into connection
+  matchWith(userid: String!, matchesID: String!): user!
+  unmatchWith(userid: String!, matchesID: String!): user!
+  blockPerson(userID: String!, blockedID: String!): user!
+  changePreferences(userID: String!, input: newPref): user!
+  sendDailyAnswer(userID: String!, answer: String!): user!
+}
+
+# type subscription {
+#     sendDailyQuestion(): Boolean
+# }`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) field_Mutation_blockPerson_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["userID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userID"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["userID"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["blockedID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("blockedID"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["blockedID"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_changePreferences_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["userID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userID"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["userID"] = arg0
+	var arg1 *model.NewPref
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg1, err = ec.unmarshalOnewPref2ᚖcinderellaᚑmeetupᚋgraphᚋmodelᚐNewPref(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg1
+	return args, nil
+}
 
 func (ec *executionContext) field_Mutation_createNewUser_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
@@ -425,6 +585,78 @@ func (ec *executionContext) field_Mutation_createNewUser_args(ctx context.Contex
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_matchWith_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["userid"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userid"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["userid"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["matchesID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("matchesID"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["matchesID"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_sendDailyAnswer_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["userID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userID"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["userID"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["answer"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("answer"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["answer"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_unmatchWith_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["userid"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userid"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["userid"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["matchesID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("matchesID"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["matchesID"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -437,6 +669,21 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 		}
 	}
 	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_userByID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["userID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userID"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["userID"] = arg0
 	return args, nil
 }
 
@@ -520,6 +767,251 @@ func (ec *executionContext) _Mutation_createNewUser(ctx context.Context, field g
 	return ec.marshalNuser2ᚖcinderellaᚑmeetupᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_findTodaysMatches(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().FindTodaysMatches(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.User)
+	fc.Result = res
+	return ec.marshalNuser2ᚖcinderellaᚑmeetupᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_matchWith(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_matchWith_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().MatchWith(rctx, args["userid"].(string), args["matchesID"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.User)
+	fc.Result = res
+	return ec.marshalNuser2ᚖcinderellaᚑmeetupᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_unmatchWith(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_unmatchWith_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UnmatchWith(rctx, args["userid"].(string), args["matchesID"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.User)
+	fc.Result = res
+	return ec.marshalNuser2ᚖcinderellaᚑmeetupᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_blockPerson(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_blockPerson_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().BlockPerson(rctx, args["userID"].(string), args["blockedID"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.User)
+	fc.Result = res
+	return ec.marshalNuser2ᚖcinderellaᚑmeetupᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_changePreferences(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_changePreferences_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().ChangePreferences(rctx, args["userID"].(string), args["input"].(*model.NewPref))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.User)
+	fc.Result = res
+	return ec.marshalNuser2ᚖcinderellaᚑmeetupᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_sendDailyAnswer(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_sendDailyAnswer_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().SendDailyAnswer(rctx, args["userID"].(string), args["answer"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.User)
+	fc.Result = res
+	return ec.marshalNuser2ᚖcinderellaᚑmeetupᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_allUsers(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -550,6 +1042,48 @@ func (ec *executionContext) _Query_allUsers(ctx context.Context, field graphql.C
 	res := resTmp.([]*model.User)
 	fc.Result = res
 	return ec.marshalOuser2ᚕᚖcinderellaᚑmeetupᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_userByID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_userByID_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().UserByID(rctx, args["userID"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.User)
+	fc.Result = res
+	return ec.marshalNuser2ᚖcinderellaᚑmeetupᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2259,7 +2793,7 @@ func (ec *executionContext) _user_todaysMatch(ctx context.Context, field graphql
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _user_pastMatches(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+func (ec *executionContext) _user_longTermMatches(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2277,7 +2811,7 @@ func (ec *executionContext) _user_pastMatches(ctx context.Context, field graphql
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.PastMatches, nil
+		return obj.LongTermMatches, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2582,6 +3116,14 @@ func (ec *executionContext) unmarshalInputnewUser(ctx context.Context, obj inter
 			if err != nil {
 				return it, err
 			}
+		case "longTermMatches":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("longTermMatches"))
+			it.LongTermMatches, err = ec.unmarshalOString2ᚕᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "pastMatches":
 			var err error
 
@@ -2656,6 +3198,36 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "findTodaysMatches":
+			out.Values[i] = ec._Mutation_findTodaysMatches(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "matchWith":
+			out.Values[i] = ec._Mutation_matchWith(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "unmatchWith":
+			out.Values[i] = ec._Mutation_unmatchWith(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "blockPerson":
+			out.Values[i] = ec._Mutation_blockPerson(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "changePreferences":
+			out.Values[i] = ec._Mutation_changePreferences(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "sendDailyAnswer":
+			out.Values[i] = ec._Mutation_sendDailyAnswer(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2691,6 +3263,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_allUsers(ctx, field)
+				return res
+			})
+		case "userByID":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_userByID(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			})
 		case "__type":
@@ -3047,8 +3633,8 @@ func (ec *executionContext) _user(ctx context.Context, sel ast.SelectionSet, obj
 			}
 		case "todaysMatch":
 			out.Values[i] = ec._user_todaysMatch(ctx, field, obj)
-		case "pastMatches":
-			out.Values[i] = ec._user_pastMatches(ctx, field, obj)
+		case "longTermMatches":
+			out.Values[i] = ec._user_longTermMatches(ctx, field, obj)
 		case "lostMatches":
 			out.Values[i] = ec._user_lostMatches(ctx, field, obj)
 		case "blockMatches":
