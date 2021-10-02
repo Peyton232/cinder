@@ -14,8 +14,8 @@ func (r *mutationResolver) CreateNewUser(ctx context.Context, input model.NewUse
 	return db.CreateUser(&input), nil
 }
 
-func (r *mutationResolver) FindTodaysMatches(ctx context.Context) (*model.User, error) {
-	panic(fmt.Errorf("not implemented"))
+func (r *mutationResolver) FindTodaysMatches(ctx context.Context) (bool, error) {
+	return db.FindTodaysMatches(), nil
 }
 
 func (r *mutationResolver) MatchWith(ctx context.Context, userid string, matchesID string) (*model.User, error) {
@@ -23,19 +23,19 @@ func (r *mutationResolver) MatchWith(ctx context.Context, userid string, matches
 }
 
 func (r *mutationResolver) UnmatchWith(ctx context.Context, userid string, matchesID string) (*model.User, error) {
-	panic(fmt.Errorf("not implemented"))
+	return db.UnMatchWith(userid, matchesID), nil
 }
 
 func (r *mutationResolver) BlockPerson(ctx context.Context, userID string, blockedID string) (*model.User, error) {
-	panic(fmt.Errorf("not implemented"))
+	return db.BlockPerson(userID, blockedID), nil
 }
 
 func (r *mutationResolver) ChangePreferences(ctx context.Context, userID string, input *model.NewPref) (*model.User, error) {
-	panic(fmt.Errorf("not implemented"))
+	return db.ChangePref(userID, *input), nil
 }
 
 func (r *mutationResolver) SendDailyAnswer(ctx context.Context, userID string, answer string) (*model.User, error) {
-	panic(fmt.Errorf("not implemented"))
+	return db.SendDailyAnswer(userID, answer), nil
 }
 
 func (r *queryResolver) AllUsers(ctx context.Context) ([]*model.User, error) {

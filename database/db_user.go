@@ -64,17 +64,67 @@ func (DB *DB) FindUserByID(ID string) *model.User {
 	return &user
 }
 
-func (DB *DB) MatchWith(userID string, matchesID string) *model.User {
+func (DB *DB) UnMatchWith(userID string, matchesID string) *model.User {
 	collection := DB.users
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	user := model.User{}
+	collection.FindOneAndUpdate(ctx, bson.M{"userid": userID}, bson.M{"$set": bson.M{"todaysMatch": nil}})
+	collection.FindOneAndUpdate(ctx, bson.M{"userid": userID}, bson.M{"$addToSet": bson.M{"lostMatches": matchesID}})
+	user = *DB.FindUserByID(userID)
+	return &user
+}
 
-	matchs := DB.FindUserByID(matchesID)
-	
+func (DB *DB) BlockPerson(userID string, matchesID string) *model.User {
+	collection := DB.users
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	user := model.User{}
+	// user
+	collection.FindOneAndUpdate(ctx, bson.M{"userid": userID}, bson.M{"$set": bson.M{"todaysMatch": nil}})
+	collection.FindOneAndUpdate(ctx, bson.M{"userid": userID}, bson.M{"$addToSet": bson.M{"blockMatches": matchesID}})
 
-	if contains()
-	// if other person passed, then also pass
-	//else
-	// move from daily match to pastMatches
+	// matches
+	collection.FindOneAndUpdate(ctx, bson.M{"userid": matchesID}, bson.M{"$set": bson.M{"todaysMatch": nil}})
+	collection.FindOneAndUpdate(ctx, bson.M{"userid": matchesID}, bson.M{"$addToSet": bson.M{"lostMatches": userID}})
+	user = *DB.FindUserByID(userID)
+	return &user
+}
+
+func (DB *DB) ChangePref(userID string, pref model.NewPref) *model.User {
+	user := DB.FindUserByID(userID)
+	if user == nil {
+		log.Default()
+	}
+
+	if pref.AgeRange != nil {
+		user.Preference.AgeRange = pref.AgeRange
+	}
+	if pref.DarkMode != nil {
+		user.Preference.DarkMode = pref.DarkMode
+	}
+	if pref.FindMatchToday != nil {
+		user.Preference.FindMatchToday = pref.FindMatchToday
+	}
+	if pref.Gender != nil {
+		user.Preference.Gender = pref.Gender
+	}
+	if pref.Location != nil {
+		user.Preference.Location = pref.Location
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	DB.users.FindOneAndReplace(ctx, bson.M{"userid": userID}, bson.M{"preferences": user.Preference}).Decode(&user)
+	return user
+}
+
+func (DB *DB) SendDailyAnswer(userID string, answer string) *model.User {
+	collection := DB.users
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	user := model.User{}
+	collection.FindOneAndUpdate(ctx, bson.M{"userid": userID}, bson.M{"$set": bson.M{"dailyAnswer": answer}})
+	user = *DB.FindUserByID(userID)
+	return &user
 }

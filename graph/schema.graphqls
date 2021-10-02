@@ -75,7 +75,10 @@ type Mutation {
   createNewUser(input: newUser!): user!
 
   # Go through all users and setup matches
-  findTodaysMatches: user!
+  findTodaysMatches: Boolean!
+
+  # midghit
+  clockStrikesMidnight(): Boolean!
 
   # When user wants to turn user into connection
   matchWith(userid: String!, matchesID: String!): user!

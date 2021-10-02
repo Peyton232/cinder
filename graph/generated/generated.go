@@ -92,7 +92,7 @@ type ComplexityRoot struct {
 
 type MutationResolver interface {
 	CreateNewUser(ctx context.Context, input model.NewUser) (*model.User, error)
-	FindTodaysMatches(ctx context.Context) (*model.User, error)
+	FindTodaysMatches(ctx context.Context) (bool, error)
 	MatchWith(ctx context.Context, userid string, matchesID string) (*model.User, error)
 	UnmatchWith(ctx context.Context, userid string, matchesID string) (*model.User, error)
 	BlockPerson(ctx context.Context, userID string, blockedID string) (*model.User, error)
@@ -512,7 +512,7 @@ type Mutation {
   createNewUser(input: newUser!): user!
 
   # Go through all users and setup matches
-  findTodaysMatches: user!
+  findTodaysMatches: Boolean!
 
   # When user wants to turn user into connection
   matchWith(userid: String!, matchesID: String!): user!
@@ -807,9 +807,9 @@ func (ec *executionContext) _Mutation_findTodaysMatches(ctx context.Context, fie
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.User)
+	res := resTmp.(bool)
 	fc.Result = res
-	return ec.marshalNuser2ᚖcinderellaᚑmeetupᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_matchWith(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
