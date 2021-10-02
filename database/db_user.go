@@ -69,6 +69,11 @@ func (DB *DB) MatchWith(userID string, matchesID string) *model.User {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	user := model.User{}
+
+	matchs := DB.FindUserByID(matchesID)
+	
+
+	if contains()
 	// if other person passed, then also pass
 	//else
 	// move from daily match to pastMatches
