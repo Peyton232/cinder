@@ -10,9 +10,10 @@ import (
 )
 
 type DB struct {
-	client *mongo.Client
-	users  *mongo.Collection
-	verify *mongo.Collection
+	client   *mongo.Client
+	users    *mongo.Collection
+	verify   *mongo.Collection
+	question *mongo.Collection
 }
 
 func Connect() *DB {
@@ -27,9 +28,10 @@ func Connect() *DB {
 	defer cancel()
 	client.Connect(ctx)
 	return &DB{
-		client: client,
-		users:  client.Database("cinderellaApp").Collection("users"),
-		verify: client.Database("cinderellaApp").Collection("verify"),
+		client:   client,
+		users:    client.Database("cinderellaApp").Collection("users"),
+		verify:   client.Database("cinderellaApp").Collection("verify"),
+		question: client.Database("cinderellaApp").Collection("question"),
 	}
 }
 

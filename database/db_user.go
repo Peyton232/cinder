@@ -128,3 +128,21 @@ func (DB *DB) SendDailyAnswer(userID string, answer string) *model.User {
 	user = *DB.FindUserByID(userID)
 	return &user
 }
+
+func (DB *DB) MatchWith(userID string, matchesID string) *model.User {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	matchs := DB.FindUserByID(matchesID)
+
+	if contains(matchs.LostMatches, userID) || contains(matchs.BlockMatches, userID) {
+		DB.users.FindOneAndUpdate(ctx, bson.M{"userid": userID}, bson.M{"$addToSet": bson.M{"lostMatches": matchesID}})
+	} else {
+		DB.users.FindOneAndUpdate(ctx, bson.M{"userid": userID}, bson.M{"$addToSet": bson.M{"longTermMatches": matchesID}})
+	}
+
+	return DB.FindUserByID(userID)
+	// if other person passed, then also pass
+	//else
+	// move from daily match to pastMatches
+}

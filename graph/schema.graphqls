@@ -65,20 +65,27 @@ type user {
   preference: pref
 }
 
+type dailyQuestion {
+  question: String!
+}
+
 type Query {
   allUsers: [user]
   userByID(userID: String!): user! 
+  whatisQuestion: dailyQuestion
   # sendSMS(): Verify
 }
 
 type Mutation {
   createNewUser(input: newUser!): user!
 
+  changeQuestion(question: String): dailyQuestion
+
   # Go through all users and setup matches
   findTodaysMatches: Boolean!
 
   # midghit
-  clockStrikesMidnight(): Boolean!
+  clockStrikesMidnight: Boolean!
 
   # When user wants to turn user into connection
   matchWith(userid: String!, matchesID: String!): user!

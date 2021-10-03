@@ -7,19 +7,26 @@ import (
 	"cinderella-meetup/graph/generated"
 	"cinderella-meetup/graph/model"
 	"context"
-	"fmt"
 )
 
 func (r *mutationResolver) CreateNewUser(ctx context.Context, input model.NewUser) (*model.User, error) {
 	return db.CreateUser(&input), nil
 }
 
+func (r *mutationResolver) ChangeQuestion(ctx context.Context, question *string) (*model.DailyQuestion, error) {
+	return db.CreateQuestion(*question), nil
+}
+
 func (r *mutationResolver) FindTodaysMatches(ctx context.Context) (bool, error) {
 	return db.FindTodaysMatches(), nil
 }
 
+func (r *mutationResolver) ClockStrikesMidnight(ctx context.Context) (bool, error) {
+	return db.ClockStrikesTwelve(), nil
+}
+
 func (r *mutationResolver) MatchWith(ctx context.Context, userid string, matchesID string) (*model.User, error) {
-	panic(fmt.Errorf("not implemented"))
+	return db.MatchWith(userid, matchesID), nil
 }
 
 func (r *mutationResolver) UnmatchWith(ctx context.Context, userid string, matchesID string) (*model.User, error) {
@@ -44,6 +51,10 @@ func (r *queryResolver) AllUsers(ctx context.Context) ([]*model.User, error) {
 
 func (r *queryResolver) UserByID(ctx context.Context, userID string) (*model.User, error) {
 	return db.FindUserByID(userID), nil
+}
+
+func (r *queryResolver) WhatisQuestion(ctx context.Context) (*model.DailyQuestion, error) {
+	return db.ReadQuestion(), nil
 }
 
 // Mutation returns generated.MutationResolver implementation.

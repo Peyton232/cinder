@@ -2,6 +2,10 @@
 
 package model
 
+type DailyQuestion struct {
+	Question string `json:"question"`
+}
+
 type NewPref struct {
 	AgeRange       *string `json:"ageRange"`
 	Gender         *string `json:"gender"`
